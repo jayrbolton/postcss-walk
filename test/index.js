@@ -10,7 +10,7 @@ const changes1 = 'body {background: pink;}'
 
 describe('postcss-watch', () => {
 
-  it('does stuff', done => {
+  it('watches for changes and compiles', done => {
     fs.writeFileSync(input, '')
     const compile$ = postcssWatch({ input, output, plugins: [], verbose: true })
 
