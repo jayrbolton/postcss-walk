@@ -1,7 +1,7 @@
 
 # postcss-watch
 
-Simple helper module that you can import and use to create a postcss watch
+Simple helper module that you can import and use to create a postcss watcher script
 
 ```js
 const postcssWatch = require('postcss-watch')

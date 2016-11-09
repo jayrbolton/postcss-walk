@@ -32,6 +32,7 @@ const readFile = (input, change$) =>
   fs.readFile(input, (err, data) => change$(data))
 
 const initialize = options => {
+  if(!options.plugins) throw "Don't forget to pass in some postcss plugins to postcss-watch"
   let postcssObj = postcss(options.plugins)
   const change$ = flyd.stream()
   createDirs(options.output)
