@@ -3,36 +3,23 @@ const flyd = require("flyd")
 const fs = require('fs')
 const postcss = require('postcss')
 
-const input = process.argv[2]
-if(input === undefined) {
-  console.log('Arguments', process.argv)
-  throw "Pass in an input css file (eg `node scripts/watch-css.js lib/assets/css/test.css`)"
-}
-const output = input.replace(/^lib\//, 'public/')
-console.log('input:', input)
-console.log('output:', output)
-
-const change$ = flyd.stream()
 
 const createDirs = path => {
-  const prefix = 'public'
-  // Every directory in an array (eg ['css', 'css/nonprofits', 'css/nonprofits/recurring_donations']
+  // Every directory level in an array (eg ['css', 'css/nonprofits', 'css/nonprofits/recurring_donations']
   const everyDir = R.compose(
-    R.dropLast(1) // we don't want the filename
-  , R.drop(2) // we don't want the initial dot or the /lib directory
+    R.dropLast(1) // we don't want the path with the filename at the end (last element in the scan)
+  , R.drop(1) // we don't want the first empty array from the scan
   , R.map(R.join('/'))
   , R.scan((arr, p) => R.append(p, arr), [])
   , R.split('/')
   )(path)
-  console.log('everyDir', everyDir)
   everyDir.map(dir => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir)
   })
 }
-createDirs(output)
 
-const compile = css => {
-  postcss([require('postcss-import')])
+const compile = (input, output, postcssObj, log) => css =>
+  postcssObj
     .process(css, { from: input, to: output })
     .then(result => {
       fs.writeFileSync(output, result.css)
@@ -40,15 +27,22 @@ const compile = css => {
       console.log('-> compiled to', output)
     })
     .catch(err => console.log('!!! compile error: ', err.message))
-  }
 
-const readFile = () => fs.readFile(input, (err, data) => change$(data))
-readFile()
+const readFile = (input, change$) => 
+  fs.readFile(input, (err, data) => change$(data))
 
-fs.watch(input, {}, (eventType, filename) => {
-  if(eventType === 'change') readFile()
-})
+const initialize = options => {
+  let postcssObj = postcss(options.plugins)
+  const change$ = flyd.stream()
+  createDirs(options.output)
+  // readFile(options.input, change$)
+  fs.watch(options.input, {}, (eventType, filename) => {
+    if(eventType === 'change') readFile(options.input, change$)
+  })
+  const log = options.verbose ? console.log : function(){}
+  flyd.map(css => log(`\n:o] css change detected!`), change$)
+  const compile$ = flyd.map(compile(options.input, options.output, postcssObj, log), change$)
+  return compile$
+}
 
-flyd.map(css => console.log(`\n:o] css change detected!`), change$)
-flyd.map(compile, change$)
-
+module.exports = initialize

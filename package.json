@@ -25,5 +25,8 @@
     "flyd": "0.2.2",
     "postcss": "5.2.5",
     "ramda": "0.22.1"
+  },
+  "devDependencies": {
+    "mocha": "3.1.2"
   }
 }
