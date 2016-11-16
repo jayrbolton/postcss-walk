@@ -1,6 +1,6 @@
 {
   "name": "postcss-watch",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Postcss API wrapper to make it easy to watch file changes and compile",
   "main": "index.js",
   "scripts": {
@@ -22,7 +22,6 @@
   },
   "homepage": "https://github.com/jayrbolton/postcss-watch#readme",
   "dependencies": {
-    "flyd": "0.2.2",
     "postcss": "5.2.5",
     "ramda": "0.22.1"
   },
