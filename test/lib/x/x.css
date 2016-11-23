@@ -1,2 +1,4 @@
 
-p {color: pink;}
+$pink: '#123';
+
+p {color: $pink;}

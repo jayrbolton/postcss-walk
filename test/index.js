@@ -1,17 +1,16 @@
-const assert = require('assert')
 const postcssWatch = require('../')
 const fs = require('fs')
-const flyd = require('flyd')
+const pimport = require('postcss-import')
 
 const input = 'test/lib'
 const output = 'test/public'
+const plugins = [
+   require('postcss-import')
+ , require('precss')
+ , require('postcss-color-function')
+ , require('autoprefixer')
+]
 
 const changes1 = 'body {background: pink;}'
 
-describe('postcss-watch', () => {
-
-  it('watches for changes and compiles', done => {
-    postcssWatch({ input, output, plugins: [], verbose: true })
-    done()
-  })
-})
+postcssWatch({ input, output, plugins, log: true, copyAssets: ['jpg'] })

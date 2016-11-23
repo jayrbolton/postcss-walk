@@ -26,6 +26,10 @@
     "ramda": "0.22.1"
   },
   "devDependencies": {
-    "mocha": "3.1.2"
+    "autoprefixer": "6.5.3",
+    "mocha": "3.1.2",
+    "postcss-color-function": "2.0.1",
+    "postcss-import": "8.2.0",
+    "precss": "1.4.0"
   }
 }
