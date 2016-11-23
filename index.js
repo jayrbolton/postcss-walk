@@ -60,6 +60,7 @@ const unwatchRemovedDeps = (index, deps) => {
 }
 // Unwatch an index file (plus all its dependents)
 const unwatchIndex = index => {
+  if(!watching[index]) return
   log(chalk.gray('<>      closing: ' + index))
   watching[index].watcher.close()
   R.map(w => w.close(), watching[index].deps)
@@ -67,6 +68,7 @@ const unwatchIndex = index => {
 }
 // Unwatch a dependent file
 const unwatchDep = (index, file) => {
+  if(!watching[index].deps[file]) return
   log(chalk.gray('<>      closing: ' + file))
   watching[index].deps[file].close()
   delete watching[index].deps[file]
@@ -75,13 +77,7 @@ const unwatchDep = (index, file) => {
 const watchIndex = (file, cb) => {
   watching[file] = {
     deps: {}
-  , watcher: watch(file, ()=> {
-      if(!fileExists(file)) {
-        unwatchIndex(file)
-      } else {
-        cb()
-      }
-    }) 
+  , watcher: watch(file, ()=> { fileExists(file) ? cb() : unwatchIndex(file) })
   }
 }
 // Start watching a depndent file (compile the parent on dependent file changes)
@@ -149,8 +145,14 @@ const walkDir = (input, options) => {
   }
 }
 
+let watchingDirs = {}
+const unwatchDir = (input, output, options) => {
+  if(!watchingDirs[input]) return
+  watchingDirs[input].close()
+  delete watchingDirs[input]
+}
 const watchDir = (input, output, options) => {
-  fs.watch(input, (ev, filename) => {
+  watchingDirs[input] = fs.watch(input, (ev, filename) => {
     if(ev === 'rename') {
       handleRename(input + '/' + filename, output + '/' + filename, options)
     }
@@ -169,8 +171,8 @@ const handleRename = (input, output, options) => {
       walkDir(input, options)
     }
   } else { // File has been removed
-    // if(watching[input]) unwatchIndex(input)
-    // TODO remove directory watcher
+    if(watching[input]) unwatchIndex(input)
+    if(watchingDirs[input]) unwatchDir(input)
   }
 }
 
