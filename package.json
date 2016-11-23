@@ -1,6 +1,6 @@
 {
   "name": "postcss-watch",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Postcss API wrapper to make it easy to watch file changes and compile",
   "main": "index.js",
   "scripts": {
