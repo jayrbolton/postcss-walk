@@ -1,4 +1,3 @@
-
 # postcss-watch
 
 Postcss runner that crawls a whole directory tree, finds all `index.css` (or a custom main-file name), and compiles each index file into the corresponding path in the output directory, matching the input's directory tree and filepath. It will also copy other assets, like images and fonts. If you are using `postcss-import`, it will listen to changes on dependent css files and re-compile their parents.
@@ -9,10 +8,10 @@ This will compile many index.css files within any directory tree into an output 
 postcssWatch({
   input      // String path of input directory holding all css files
 , output     // String path of output directory in which to put all compiled css
+, indexName  // String name of the main index file(s) that you wish to (defaults to 'index.css')
 , plugins    // Array of postcss plugins to use
-, verbose    // Boolean, whether to log progress, warnings, errors, etc
-, indexName  // String name of the main index file(s) that you wish to 
 , copyAssets // Array of asset extension names to copy over to the output dir (eg ['jpg', 'png', 'tiff', 'otf'])
+, log        // Boolean, whether to log to stdout the file paths that are compiled (and compile warnings)
 })
 ```
 

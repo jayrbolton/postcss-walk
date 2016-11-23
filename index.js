@@ -43,6 +43,7 @@ const watchChildren = (plugins, from, to, log) => {
       // Get all dependency paths and watch them
       R.compose(
         R.map(f => watch(f, ()=> compile(plugins, from, to, log)))
+      , R.map(f => log('** found dependent:', f) || f)
       , R.map(dep => dep.file)
       , R.filter(m => m && m.type === 'dependency')
       )(result.messages || [])
@@ -83,7 +84,7 @@ const initialize = options => {
     if(stats.isDirectory()) {
       const children = R.map(R.concat(path + '/'), fs.readdirSync(path))
       stack.push.apply(stack, children)
-    } else if(stats.isFile() && path.match(options.indexName)) {
+    } else if(stats.isFile() && path.match(new RegExp('\/' + options.indexName + '$'))) {
       createDirs(output)
       compile(options.plugins, path, output, log)
       watch(path, ()=> compile(options.plugins, path, output, log))

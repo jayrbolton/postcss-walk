@@ -11,6 +11,4 @@ const plugins = [
  , require('autoprefixer')
 ]
 
-const changes1 = 'body {background: pink;}'
-
 postcssWatch({ input, output, plugins, log: true, copyAssets: ['jpg'] })
