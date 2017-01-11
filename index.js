@@ -30,7 +30,7 @@ const logCompileErr = err =>
 // Postcss compile an input file to an output path using a postcss compiler object
 const compile = (plugins, from, to) => {
   postcss(plugins)
-    .process(fs.readFileSync(from), {from, to})
+    .process(fs.readFileSync(from), {from, to, map: true})
     .then(result => {
       fs.writeFileSync(to, result.css)
       if(result.map) fs.writeFileSync(to + '.map', result.map)
