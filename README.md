@@ -1,8 +1,8 @@
-# postcss-watch
+# postcss-walk
 
-Postcss runner that crawls a whole directory tree, finds all `index.css` (or a custom main-file name), and compiles each index file into the corresponding path in the output directory, matching the input's directory tree and filepath. It will also copy other assets, like images and fonts. If you are using `postcss-import`, it will listen to changes on dependent css files and re-compile their parents.
+Postcss runner that crawls a whole directory tree, finds all `page.css` (or any main-file name you want), and compiles each main file into the corresponding path in the output directory, matching the input's directory tree and filepath. It can either build everything and exit, or it can watch for file changes indefinitely. If you are using `postcss-import`, it will listen to changes on dependent css files and re-compile their parent files.
 
-This will compile many index.css files within any directory tree into an output directory matching the same directory tree, which can be useful for multi-page apps. Of course you can also just use it to watch/compile a single file.
+Compiling multiple css files from a source directory to a matching output directory can be useful for multi-page apps. Of course, you can also just use it to watch/compile a single file.
 
 ```js
 postcssWatch({
@@ -10,32 +10,23 @@ postcssWatch({
 , output     // String path of output directory in which to put all compiled css
 , indexName  // String name of the main index file(s) that you wish to (defaults to 'index.css')
 , plugins    // Array of postcss plugins to use
-, copyAssets // Array of asset extension names to copy over to the output dir (eg ['jpg', 'png', 'tiff', 'otf'])
 , log        // Boolean, whether to log to stdout the file paths that are compiled (and compile warnings)
+, watch      // Boolean, whether to watch files for changes (defaults to false)
 })
 ```
 
 ```js
 const postcssWatch = require('postcss-watch')
 
-const input = process.argv[2]
-if(input === undefined) {
-  console.log('Arguments', process.argv)
-  throw "Pass in an input css file (eg `node scripts/watch-css.js lib/assets/css/test.css`)"
-}
-const output = input.replace(/^lib\//, 'public/')
+// Source files from:
+const input  = 'lib/css'
+// Output compiled files to:
+const output = 'public/css'
 
-const plugins = [
-  require('postcss-import')
-]
+const plugins = [ require('postcss-import') ]
 
-postcssWatch({ input, output, plugins, verbose: true })
+postcssWatch({ input, output, plugins, log: true, watch: true })
 ```
 
-If you save the above to `watch.js`, then in bash you can:
+Then run `node your-css-compile-script.js`
 
-```sh
-node watch.js lib/test.js
-```
-
-it will watch that file and output (in this example) to public/test.js

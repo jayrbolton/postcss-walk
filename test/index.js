@@ -11,4 +11,4 @@ const plugins = [
  , require('autoprefixer')
 ]
 
-postcssWatch({ input, output, plugins, log: true, copyAssets: ['jpg'] })
+postcssWatch({ input, output, plugins, log: true })

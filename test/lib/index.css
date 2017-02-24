@@ -1,2 +1,4 @@
+@import 'commons.css';
 @import "test.css";
 body { background: 'blue'; }
+

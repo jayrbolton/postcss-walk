@@ -37,27 +37,31 @@ const compile = (plugins, from, to) => {
       log(chalk.green.bold('=>     compiled: ' + from + ' to ' + to))
       result.warnings().forEach(warn => log(chalk.red('!!      warning: ' + warn.toString())))
       // Get all dependency paths and watch them
+      const recurseCompile = ()=> compile(plugins, from, to)
+      const notModule = p => p.indexOf('node_modules') === -1
+      const isDep = m => m && m.type === 'dependency'
       R.compose(
-        R.map(f => watchDep(from, f, ()=> {compile(plugins, from, to, log)} ))
-      , deps => unwatchRemovedDeps(from, deps)
-      , R.map(dep => dep.file)
-      , R.filter(m => m && m.type === 'dependency')
+        R.map(watchDep(from, recurseCompile))
+      , R.filter(notModule)
+      , unwatchRemovedDeps(from)
+      , R.map(R.prop('file'))
+      , R.filter(isDep)
       )(result.messages || [])
     })
     .catch(logCompileErr)
 }
 
 
-let watching = {}
+var watching = {}
 // Unwatch all dependents that have been removed from an index file
-const unwatchRemovedDeps = (index, deps) => {
-  const keys = R.keys(watching[index].deps)
-  const missing = R.without(deps, keys)
-  R.map(
-    f => unwatchDep(index, f)
-  , missing)
+const unwatchRemovedDeps = R.curryN(2, (index, deps) => {
+  if(watching[index]) {
+    const keys = R.keys(watching[index].deps)
+    const missing = R.without(deps, keys)
+    R.map(f => unwatchDep(index, f), missing)
+  }
   return deps
-}
+})
 // Unwatch an index file (plus all its dependents)
 const unwatchIndex = index => {
   if(!watching[index]) return
@@ -82,8 +86,8 @@ const watchIndex = (file, cb) => {
 }
 // Start watching a depndent file (compile the parent on dependent file changes)
 // Unwatch the index file if it is removed, and unwatch the dependent if it is removed
-const watchDep = (index, file, cb) => {
-  if(watching[index].deps[file]) return
+const watchDep = R.curryN(3, (index, cb, file) => {
+  if(!watching[index] || watching[index].deps[file]) return
   watching[index].deps[file] = watch(file, ()=> {
     if(!fileExists(index)) {
       unwatchIndex(index)
@@ -93,41 +97,36 @@ const watchDep = (index, file, cb) => {
       cb()
     }
   })
-}
+})
 
 const watch = (file, cb) => {
   log(chalk.gray('<>     watching: ' + file))
   return fs.watch(file, {}, cb)
 }
 
-// - create an object of index filenames that map to arrays
-// - for each key in the object, compile it and find all the dependent filepaths
-// - watch each file path and compile the index on changes
-// - watch each index and recompile itself on changes
-
-let log = ()=>{}
+var log = ()=>{}
 // options.plugins is an array of postcss plugin modules
 // options.input is the top-level directory of containing all input css files
 // options.output is the top-level directory that will contain all output/compiled css files
 const initialize = options => {
   // Set defaults
   options = R.merge({
-    copyAssets: []
-  , indexName: 'index.css'
+    indexName: 'index.css'
   , plugins: []
   , input: ''
   , output: ''
+  , watch: false
   }, options)
   // Log is a no-op unless options.log is true
   if(options.log) log = console.log.bind(console)
   walkDir(options.input, options)
 }
 
-// Recursively walk through a directory, finding all index css files or assets
+// Recursively walk through a directory, finding all index css files
 // Uses a stack, not actual recursion
 const walkDir = (input, options) => {
   const inputRegex = new RegExp("^" + options.input.replace('/', '\/'))
-  let stack = [input]
+  var stack = [input]
   // Tree traversal of directory structure using stack recursion
   while(stack.length) {
     input = stack.pop()
@@ -136,7 +135,7 @@ const walkDir = (input, options) => {
     if(stats.isDirectory()) {
       // Watch the directory for new files
       // Push all children in the directory to the stack
-      watchDir(input, output, options)
+      if(options.watch) watchDir(input, output, options)
       const children = R.map(R.concat(input + '/'), fs.readdirSync(input))
       stack.push.apply(stack, children)
     } else if(stats.isFile()) {
@@ -145,7 +144,7 @@ const walkDir = (input, options) => {
   }
 }
 
-let watchingDirs = {}
+var watchingDirs = {}
 const unwatchDir = (input, output, options) => {
   if(!watchingDirs[input]) return
   watchingDirs[input].close()
@@ -180,37 +179,8 @@ const watchNewFile = (input, output, options) => {
   if(input.match(new RegExp('\/' + options.indexName + '$'))) {
     createDirs(output)
     compile(options.plugins, input, output)
-    watchIndex(input, ()=> compile(options.plugins, input, output))
-  } else {
-    // Find any asset extension matches
-    const ext = input.split('.').pop()
-    if(R.contains(ext, options.copyAssets)) {
-      copyAsset(input, output)
-      watchAsset(input, output)
-    }
+    if(options.watch) watchIndex(input, ()=> compile(options.plugins, input, output))
   }
-}
-
-const watchAsset = (input, output) => {
-  log(chalk.gray('<>     watching: ' + input))
-  let watcher = fs.watch(input, {}, ()=> {
-    if(!fs.lstatSync(input).isFile()) {
-      log(chalk.gray('<>      closing: ' + input))
-      watcher.close()
-    }
-    else copyAsset(input, output)
-  })
-}
-
-// copy a file over to an output dir
-const copyAsset = (input, output) => {
-  createDirs(output)
-  log(chalk.blue('>>      copying: ' + input + ' to ' + output))
-  let rd = fs.createReadStream(input)
-  rd.on('error', err => log('!! read error: ' + input + " - " + err))
-  let wr = fs.createWriteStream(output)
-  wr.on('error', err => log(chalk.red('!! write error: ' + input + ' - ' + err)))
-  rd.pipe(wr)
 }
 
 module.exports = initialize
